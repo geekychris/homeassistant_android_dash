@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Tablet-specific dimensions -->
+<resources>
+    <!-- Grid columns for entity grid -->
+    <integer name="dashboard_grid_columns">3</integer>
+
+    <!-- Spacing -->
+    <dimen name="dashboard_padding">24dp</dimen>
+    <dimen name="card_margin">12dp</dimen>
+    <dimen name="card_elevation">6dp</dimen>
+
+    <!-- Text sizes -->
+    <dimen name="entity_name_text_size">20sp</dimen>
+    <dimen name="entity_state_text_size">16sp</dimen>
+    <dimen name="title_text_size">32sp</dimen>
+
+    <!-- Card sizes -->
+    <dimen name="entity_icon_size">56dp</dimen>
+    <dimen name="entity_card_padding">20dp</dimen>
+</resources>

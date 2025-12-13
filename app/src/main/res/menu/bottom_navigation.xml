@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_dashboard"
+            android:icon="@android:drawable/ic_menu_view"
+            android:title="Dashboard" />
+        <item
+            android:id="@+id/nav_entity_selection"
+            android:icon="@android:drawable/ic_menu_manage"
+            android:title="Select Entities" />
+        <item
+            android:id="@+id/nav_configuration"
+            android:icon="@android:drawable/ic_menu_preferences"
+            android:title="Configurations" />
+        <item
+            android:id="@+id/nav_tab_management"
+            android:icon="@android:drawable/ic_menu_sort_by_size"
+            android:title="Tabs" />
+    </group>
+</menu>
