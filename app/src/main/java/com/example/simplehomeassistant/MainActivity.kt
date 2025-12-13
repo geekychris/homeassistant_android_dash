@@ -3,6 +3,7 @@ package com.example.simplehomeassistant
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.TextView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.navigation.NavigationView
 import androidx.navigation.findNavController
@@ -36,7 +37,6 @@ class MainActivity : AppCompatActivity() {
             appBarConfiguration = AppBarConfiguration(
                 setOf(
                     R.id.nav_dashboard,
-                    R.id.nav_entity_selection,
                     R.id.nav_configuration,
                     R.id.nav_tab_management
                 ),
@@ -53,13 +53,23 @@ class MainActivity : AppCompatActivity() {
             appBarConfiguration = AppBarConfiguration(
                 setOf(
                     R.id.nav_dashboard,
-                    R.id.nav_entity_selection,
                     R.id.nav_configuration,
                     R.id.nav_tab_management
                 )
             )
             setupActionBarWithNavController(navController, appBarConfiguration)
             it.setupWithNavController(navController)
+        }
+
+        // Update tab label when navigation changes
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            val tabLabel = findViewById<TextView>(R.id.current_tab_label)
+            tabLabel?.text = when (destination.id) {
+                R.id.nav_dashboard -> "Dashboard"
+                R.id.nav_configuration -> "Configurations"
+                R.id.nav_tab_management -> "Custom Tabs"
+                else -> ""
+            }
         }
     }
 
