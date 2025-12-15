@@ -36,7 +36,15 @@ class TabManagementViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch {
             repository.getActiveConfiguration().collect { config ->
                 config?.let {
+                    android.util.Log.d(
+                        "TabManagementViewModel",
+                        "Active config ID: ${it.id}, name: ${it.name}"
+                    )
                     repository.getTabsForConfig(it.id).collect { tabList ->
+                        android.util.Log.d(
+                            "TabManagementViewModel",
+                            "Loaded ${tabList.size} tabs for config ${it.id}: ${tabList.map { tab -> "${tab.name}(tabID:${tab.id}, configID:${tab.configurationId})" }}"
+                        )
                         _tabs.value = tabList
                     }
                 }
@@ -58,9 +66,19 @@ class TabManagementViewModel(application: Application) : AndroidViewModel(applic
                     return@launch
                 }
 
+                android.util.Log.d(
+                    "TabManagementViewModel",
+                    "Creating tab '$name' for config ID: ${config.id}"
+                )
                 repository.createTab(config.id, name)
+                android.util.Log.d("TabManagementViewModel", "Tab '$name' created successfully")
                 _success.value = Event("Tab '$name' created")
             } catch (e: Exception) {
+                android.util.Log.e(
+                    "TabManagementViewModel",
+                    "Failed to create tab: ${e.message}",
+                    e
+                )
                 _error.value = Event("Failed to create tab: ${e.message}")
             }
         }

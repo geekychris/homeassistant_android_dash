@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.example.simplehomeassistant.R
 import com.example.simplehomeassistant.data.model.HAEntity
@@ -76,6 +77,10 @@ class EntityAdapter(
     }
 
     override fun getItemCount() = entities.size
+
+    fun getEntityAt(position: Int): HAEntity? {
+        return entities.getOrNull(position)
+    }
 
     // ViewHolders
     class SwitchViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -203,6 +208,63 @@ class EntityAdapter(
                 val newTemp = (targetTemp ?: 20f) - 0.5f
                 onAction(entity, EntityAction.SetTemperature(newTemp))
             }
+
+            // Make target temperature clickable for manual input
+            targetTempText.setOnClickListener {
+                showTemperatureInputDialog(entity, targetTemp ?: 20f, onAction)
+            }
+        }
+
+        private fun showTemperatureInputDialog(
+            entity: HAEntity,
+            currentTemp: Float,
+            onAction: (HAEntity, EntityAction) -> Unit
+        ) {
+            val context = itemView.context
+            val editText = EditText(context).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                        android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or
+                        android.text.InputType.TYPE_NUMBER_FLAG_SIGNED
+                setText(currentTemp.toString())
+                hint = "Enter temperature"
+                selectAll()
+            }
+
+            val dialog = AlertDialog.Builder(context)
+                .setTitle("Set Temperature")
+                .setMessage("Enter the target temperature:")
+                .setView(editText)
+                .setPositiveButton("Set") { _, _ ->
+                    val input = editText.text.toString()
+                    try {
+                        val newTemp = input.toFloat()
+                        // Validate reasonable temperature range (e.g., 5-40°C or 40-105°F)
+                        if (newTemp in 5f..105f) {
+                            onAction(entity, EntityAction.SetTemperature(newTemp))
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Temperature must be between 5 and 105",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } catch (e: NumberFormatException) {
+                        Toast.makeText(
+                            context,
+                            "Invalid temperature value",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .create()
+
+            dialog.show()
+            // Focus and show keyboard
+            editText.requestFocus()
+            val imm = context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                    as android.view.inputmethod.InputMethodManager
+            imm.showSoftInput(editText, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
         }
     }
 

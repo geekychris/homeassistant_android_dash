@@ -30,6 +30,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- WebView Authentication Activity -->
+        <activity
+            android:name=".ui.auth.WebViewAuthActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SimpleHomeAssistant.NoActionBar"
+            android:configChanges="orientation|screenSize">
+            <!-- Handle auth callback redirect -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="homeassistant"
+                    android:host="auth-callback" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

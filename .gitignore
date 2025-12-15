@@ -16,3 +16,7 @@ local.properties
 
 # Exclude sensitive configuration files
 app/src/main/assets/default_config.json
+
+# HAbitat logo source file
+HA-bitat.png
+app/HA-bitat.png

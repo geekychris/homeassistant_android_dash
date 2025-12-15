@@ -39,11 +39,22 @@ class EntitySelectionAdapter(
         private val nameText: TextView = view.findViewById(R.id.entityName)
         private val idText: TextView = view.findViewById(R.id.entityId)
         private val typeText: TextView = view.findViewById(R.id.entityType)
+        private val unavailableBadge: TextView = view.findViewById(R.id.unavailableBadge)
 
         fun bind(entity: HAEntity, isSelected: Boolean) {
             nameText.text = entity.name
             idText.text = entity.entityId
             typeText.text = entity.domain.uppercase()
+
+            // Show unavailable badge if entity is unavailable
+            val isUnavailable = entity.state.equals("unavailable", ignoreCase = true)
+            unavailableBadge.visibility = if (isUnavailable) View.VISIBLE else View.GONE
+
+            // Gray out the text if unavailable
+            val alpha = if (isUnavailable) 0.5f else 1.0f
+            nameText.alpha = alpha
+            idText.alpha = alpha
+            typeText.alpha = alpha
 
             checkbox.setOnCheckedChangeListener(null)
             checkbox.isChecked = isSelected

@@ -65,6 +65,10 @@ class TabEntityAssignmentFragment : Fragment() {
                 return true
             }
         })
+
+        binding.filterUnavailableCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.setHideUnavailable(isChecked)
+        }
     }
 
     private fun setupRecyclerView() {

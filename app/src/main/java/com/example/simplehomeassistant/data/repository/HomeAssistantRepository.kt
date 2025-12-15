@@ -35,11 +35,19 @@ class HomeAssistantRepository(private val database: AppDatabase) {
     }
 
     suspend fun setActiveConfiguration(id: Long) {
+        android.util.Log.d("ConfigDebug", "Setting active configuration ID: $id")
         configDao.deactivateAllConfigurations()
         configDao.setActiveConfiguration(id)
         currentConfig = configDao.getConfigurationById(id)
         currentConfig?.let { config ->
-            currentApi = RetrofitClient.createApi(config.internalUrl)
+            android.util.Log.d("ConfigDebug", "Loaded config: ${config.name}")
+            android.util.Log.d("ConfigDebug", "Token length: ${config.apiToken.length}")
+            android.util.Log.d("ConfigDebug", "Prefer internal: ${config.preferInternalUrl}")
+
+            // Use internal or external URL based on user preference
+            val url = if (config.preferInternalUrl) config.internalUrl else config.externalUrl
+            android.util.Log.d("ConfigDebug", "Setting API URL to: $url")
+            currentApi = RetrofitClient.createApi(url)
         }
     }
 
@@ -265,6 +273,58 @@ class HomeAssistantRepository(private val database: AppDatabase) {
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    suspend fun fetchEntityHistory(
+        startTime: java.util.Date,
+        endTime: java.util.Date? = null
+    ): Result<List<EntityEvent>> {
+        return try {
+            android.util.Log.d("HistoryAPI", "Fetching recent entity activity...")
+
+            // Get all current states
+            val statesResult = fetchAllStates()
+            if (statesResult.isFailure) {
+                return Result.failure(
+                    statesResult.exceptionOrNull() ?: Exception("Failed to fetch states")
+                )
+            }
+
+            val allStates = statesResult.getOrNull() ?: emptyList()
+            android.util.Log.d("HistoryAPI", "Converting ${allStates.size} states to events")
+
+            // Convert current states to EntityEvent format
+            // Show entities that have been updated recently
+            val events = allStates.mapNotNull { entity ->
+                try {
+                    EntityEvent(
+                        entityId = entity.entityId,
+                        state = entity.state,
+                        lastChanged = entity.lastChanged ?: entity.lastUpdated ?: "",
+                        lastUpdated = entity.lastUpdated ?: "",
+                        attributes = entity.attributes
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e(
+                        "HistoryAPI",
+                        "Error converting ${entity.entityId}: ${e.message}"
+                    )
+                    null
+                }
+            }
+
+            android.util.Log.d("HistoryAPI", "Collected ${events.size} events")
+
+            // Sort by last changed (newest first) and take last 200
+            val sortedEvents = events
+                .sortedByDescending { it.lastChanged }
+                .take(200)
+
+            Result.success(sortedEvents)
+        } catch (e: Exception) {
+            android.util.Log.e("HistoryAPI", "History fetch error", e)
+            Result.failure(Exception("Event fetch error: ${e.message}"))
         }
     }
 }

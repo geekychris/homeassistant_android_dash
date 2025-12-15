@@ -13,7 +13,7 @@ import java.io.InputStream
 
 @Database(
     entities = [Configuration::class, SelectedEntity::class, Tab::class, EntityTab::class],
-    version = 2,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -63,15 +63,20 @@ abstract class AppDatabase : RoomDatabase() {
                                 val config = loadDefaultConfig(context.applicationContext)
                                 db.execSQL(
                                     """
-                                INSERT INTO configurations (name, internalUrl, externalUrl, apiToken, isActive)
-                                VALUES (?, ?, ?, ?, ?)
+                                INSERT INTO configurations (name, internalUrl, externalUrl, apiToken, isActive, useTokenAuth, username, password, preferInternalUrl, externalApiToken)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                 """,
                                     arrayOf(
                                         config.name,
                                         config.internalUrl,
                                         config.externalUrl,
                                         config.apiToken,
-                                        if (config.isActive) 1 else 0
+                                        if (config.isActive) 1 else 0,
+                                        1, // useTokenAuth = true for default config
+                                        null,
+                                        null,
+                                        1,  // preferInternalUrl = true by default
+                                        null // externalApiToken = null initially
                                     )
                                 )
                             } catch (e: Exception) {

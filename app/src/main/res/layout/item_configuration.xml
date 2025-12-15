@@ -46,13 +46,37 @@
                 android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginTop="2dp" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/activeChip"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Active"
+                android:orientation="horizontal"
                 android:layout_marginTop="8dp"
-                android:visibility="gone" />
+                android:gravity="center_vertical">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/activeChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Active"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/urlModeLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Using: "
+                    android:textSize="12sp"
+                    android:layout_marginStart="8dp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/urlModeSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Internal"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -65,6 +89,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Activate"
+                style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/editButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit"
                 style="@style/Widget.MaterialComponents.Button.TextButton" />
 
             <com.google.android.material.button.MaterialButton

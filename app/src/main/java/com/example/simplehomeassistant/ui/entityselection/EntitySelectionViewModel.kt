@@ -30,6 +30,8 @@ class EntitySelectionViewModel(application: Application) : AndroidViewModel(appl
     private val _searchQuery = MutableLiveData<String>("")
     val searchQuery: LiveData<String> = _searchQuery
 
+    private val _hideUnavailable = MutableLiveData<Boolean>(false)
+
     private val _selectedEntityIds = MutableLiveData<Set<String>>()
     val selectedEntityIds: LiveData<Set<String>> = _selectedEntityIds
 
@@ -94,19 +96,36 @@ class EntitySelectionViewModel(application: Application) : AndroidViewModel(appl
         applySearchFilter()
     }
 
+    fun setHideUnavailable(hide: Boolean) {
+        _hideUnavailable.value = hide
+        applySearchFilter()
+    }
+
     private fun applySearchFilter() {
         val allEntitiesMap = _allEntities.value ?: emptyMap()
         val query = _searchQuery.value?.lowercase() ?: ""
+        val hideUnavailable = _hideUnavailable.value ?: false
 
-        val allEntitiesList = allEntitiesMap.values.flatten()
+        var allEntitiesList = allEntitiesMap.values.flatten()
 
+        // Apply unavailable filter
+        if (hideUnavailable) {
+            allEntitiesList = allEntitiesList.filter { entity ->
+                !entity.state.equals("unavailable", ignoreCase = true)
+            }
+        }
+
+        // Apply keyword search filter - supports multiple keywords
         val filtered = if (query.isEmpty()) {
             allEntitiesList
         } else {
+            // Split query by spaces to get individual keywords
+            val keywords = query.trim().split("""\s+""".toRegex()).filter { it.isNotEmpty() }
+
             allEntitiesList.filter { entity ->
-                entity.name.lowercase().contains(query) ||
-                        entity.entityId.lowercase().contains(query) ||
-                        entity.room.lowercase().contains(query)
+                val searchableText = "${entity.name} ${entity.entityId} ${entity.room}".lowercase()
+                // All keywords must be present in the searchable text
+                keywords.all { keyword -> searchableText.contains(keyword) }
             }
         }
 

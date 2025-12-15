@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardElevation="2dp"
+    app:cardCornerRadius="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/entityName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Entity Name"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Living Room Light" />
+
+                <TextView
+                    android:id="@+id/entityId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="entity.id"
+                    android:textSize="12sp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:layout_marginTop="2dp"
+                    tools:text="light.living_room" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/eventState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="STATE"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/holo_blue_dark"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                tools:text="ON" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/eventTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time"
+            android:textSize="12sp"
+            android:textColor="?android:attr/textColorTertiary"
+            android:layout_marginTop="4dp"
+            tools:text="Dec 14, 15:30:45" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

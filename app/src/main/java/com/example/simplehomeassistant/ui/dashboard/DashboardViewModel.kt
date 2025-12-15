@@ -43,17 +43,53 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _isExternalConnection = MutableLiveData<Boolean>(false)
     val isExternalConnection: LiveData<Boolean> = _isExternalConnection
 
+    private var lastConfigId: Long? = null
+    private var lastPreferInternal: Boolean? = null
+
     init {
         val database = AppDatabase.getDatabase(application)
         repository = HomeAssistantRepository(database)
 
-        // Simply observe the active configuration
-        // DO NOT call repository.setActiveConfiguration here - it causes an infinite loop!
-        // The configuration is already set when the user activates it
+        // Observe the active configuration and reload entities when URL preference changes
         viewModelScope.launch {
             repository.getActiveConfiguration().collect { config ->
+                val previousConfig = _activeConfiguration.value
                 _activeConfiguration.value = config
-                // User must manually tap Refresh to load entities
+
+                // Auto-reload entities when:
+                // 1. Configuration changes (different ID)
+                // 2. URL preference changes (internal vs external)
+                if (config != null) {
+                    val configChanged = lastConfigId != config.id
+                    val urlPrefChanged = lastPreferInternal != config.preferInternalUrl
+
+                    if (configChanged || urlPrefChanged) {
+                        lastConfigId = config.id
+                        lastPreferInternal = config.preferInternalUrl
+
+                        // Auto-reload when config changes OR when URL preference changes
+                        // Also load on initial app start (when previousConfig is null)
+                        if (previousConfig == null || configChanged || urlPrefChanged) {
+                            loadEntities()
+                        }
+                    }
+
+                    // Observe tab changes for this configuration
+                    repository.getTabsForConfig(config.id).collect { userTabs ->
+                        android.util.Log.d(
+                            "DashboardViewModel",
+                            "Tabs changed for config ${config.id}: ${userTabs.map { "${it.name}(ID:${it.id})" }}"
+                        )
+                        _userTabs = userTabs
+
+                        val tabList = mutableListOf("All")
+                        tabList.addAll(userTabs.map { it.name })
+                        _tabs.value = tabList
+
+                        // Reapply filter if we're on a tab that might have changed
+                        applyTabFilter()
+                    }
+                }
             }
         }
     }
@@ -64,21 +100,33 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                _isLoading.value = true
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    _isLoading.value = true
+                }
 
-                val config = _activeConfiguration.value
+                val config = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    _activeConfiguration.value
+                }
                 if (config == null) {
-                    _error.value = Event("No active configuration")
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        _error.value = Event("No active configuration")
+                        _isLoading.value = false
+                    }
                     _isLoading.value = false
                     return@launch
                 }
 
                 // Ensure repository knows about the active configuration
+                android.util.Log.d(
+                    "DashboardViewModel",
+                    "Setting active config ${config.id} in repository before fetch"
+                )
                 repository.setActiveConfiguration(config.id)
 
                 // Get all states from Home Assistant
+                android.util.Log.d("DashboardViewModel", "Fetching all states...")
                 val result = repository.fetchAllStates()
 
                 result.fold(
@@ -107,44 +155,34 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                         // Sort all entities by entity ID for stable order
                         val sortedAllEntities = allEntities.sortedBy { it.entityId }
 
-                        // Store ALL entities (including sensors) so custom tabs can access them
-                        _allEntities.value = sortedAllEntities
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            // Store ALL entities (including sensors) so custom tabs can access them
+                            _allEntities.value = sortedAllEntities
 
-                        android.util.Log.d(
-                            "DashboardViewModel",
-                            "Stored ${sortedAllEntities.size} total entities (including sensors)"
-                        )
-
-                        // Generate tabs from custom user tabs
-                        viewModelScope.launch {
-                            val userTabs =
-                                repository.getTabsForConfig(config.id).firstOrNull() ?: emptyList()
                             android.util.Log.d(
                                 "DashboardViewModel",
-                                ">>>>>>> Loaded user tabs for config ${config.id}: ${userTabs.map { "${it.name}(ID:${it.id})" }}"
+                                "Stored ${sortedAllEntities.size} total entities (including sensors)"
                             )
-                            _userTabs = userTabs
 
-                            val tabList = mutableListOf("All")
-                            tabList.addAll(userTabs.map { it.name })
-                            android.util.Log.d(
-                                "DashboardViewModel",
-                                ">>>>>>> Tab list to display: $tabList")
-                            _tabs.value = tabList
-
-                            // Apply current tab filter
+                            // Apply the current tab filter (tabs are already loaded in init)
                             applyTabFilter()
                         }
                     },
                     onFailure = { exception ->
-                        _error.value = Event(exception.message ?: "Failed to load entities")
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            _error.value = Event(exception.message ?: "Failed to load entities")
+                        }
                     }
                 )
 
-                _isLoading.value = false
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    _isLoading.value = false
+                }
             } catch (e: Exception) {
-                _error.value = Event("Error loading entities: ${e.message}")
-                _isLoading.value = false
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    _error.value = Event("Error loading entities: ${e.message}")
+                    _isLoading.value = false
+                }
             }
         }
     }
@@ -337,6 +375,53 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _allEntities.value = updatedList
         // Reapply the current tab filter with the updated list
         applyTabFilter()
+    }
+
+    fun removeDeviceFromCurrentTab(entityId: String) {
+        viewModelScope.launch {
+            val tabName = _currentTab.value
+            if (tabName == null || tabName == "All") {
+                _error.value = Event("Cannot delete from 'All' tab")
+                return@launch
+            }
+
+            val selectedTab = _userTabs.find { it.name == tabName }
+            if (selectedTab != null) {
+                try {
+                    repository.removeEntityFromTab(selectedTab.id, entityId)
+                    // Refresh the tab filter to update the UI
+                    applyTabFilter()
+                } catch (e: Exception) {
+                    _error.value = Event("Failed to remove device: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun addDeviceToCurrentTab(entityId: String) {
+        viewModelScope.launch {
+            val tabName = _currentTab.value
+            if (tabName == null || tabName == "All") {
+                return@launch
+            }
+
+            val selectedTab = _userTabs.find { it.name == tabName }
+            if (selectedTab != null) {
+                try {
+                    repository.assignEntityToTab(selectedTab.id, entityId)
+                    // Refresh the tab filter to update the UI
+                    applyTabFilter()
+                } catch (e: Exception) {
+                    _error.value = Event("Failed to add device: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun getCurrentTabId(): Long? {
+        val tabName = _currentTab.value
+        if (tabName == null || tabName == "All") return null
+        return _userTabs.find { it.name == tabName }?.id
     }
 
     // clearError() no longer needed with Event - errors auto-clear after being handled

@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
             appBarConfiguration = AppBarConfiguration(
                 setOf(
                     R.id.nav_dashboard,
+                    R.id.nav_entity_events,
                     R.id.nav_configuration,
                     R.id.nav_tab_management
                 ),
@@ -53,6 +54,7 @@ class MainActivity : AppCompatActivity() {
             appBarConfiguration = AppBarConfiguration(
                 setOf(
                     R.id.nav_dashboard,
+                    R.id.nav_entity_events,
                     R.id.nav_configuration,
                     R.id.nav_tab_management
                 )
@@ -66,6 +68,7 @@ class MainActivity : AppCompatActivity() {
             val tabLabel = findViewById<TextView>(R.id.current_tab_label)
             tabLabel?.text = when (destination.id) {
                 R.id.nav_dashboard -> "Dashboard"
+                R.id.nav_entity_events -> "Entity Events"
                 R.id.nav_configuration -> "Configurations"
                 R.id.nav_tab_management -> "Custom Tabs"
                 else -> ""

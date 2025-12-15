@@ -44,4 +44,10 @@
         android:name="com.example.simplehomeassistant.ui.tabs.TabEntityAssignmentFragment"
         android:label="Assign Devices"
         tools:layout="@layout/fragment_entity_selection" />
+
+    <fragment
+        android:id="@+id/nav_entity_events"
+        android:name="com.example.simplehomeassistant.ui.events.EntityEventsFragment"
+        android:label="Entity Events"
+        tools:layout="@layout/fragment_entity_events" />
 </navigation>

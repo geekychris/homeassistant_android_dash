@@ -21,6 +21,7 @@ class TabEntityAssignmentViewModel(application: Application) : AndroidViewModel(
     val allEntities: LiveData<List<HAEntity>> = _allEntities
 
     private val _searchQuery = MutableLiveData<String>("")
+    private val _hideUnavailable = MutableLiveData<Boolean>(false)
 
     private val _assignedEntityIds = MutableLiveData<Set<String>>()
     val assignedEntityIds: LiveData<Set<String>> = _assignedEntityIds
@@ -96,17 +97,34 @@ class TabEntityAssignmentViewModel(application: Application) : AndroidViewModel(
         applySearchFilter()
     }
 
+    fun setHideUnavailable(hide: Boolean) {
+        _hideUnavailable.value = hide
+        applySearchFilter()
+    }
+
     private fun applySearchFilter() {
         val fullList = _fullEntityList.value ?: emptyList()
         val query = _searchQuery.value?.lowercase() ?: ""
+        val hideUnavailable = _hideUnavailable.value ?: false
 
-        val filtered = if (query.isEmpty()) {
-            fullList
-        } else {
-            fullList.filter { entity ->
-                entity.name.lowercase().contains(query) ||
-                        entity.entityId.lowercase().contains(query) ||
-                        entity.room.lowercase().contains(query)
+        var filtered = fullList
+
+        // Apply unavailable filter
+        if (hideUnavailable) {
+            filtered = filtered.filter { entity ->
+                !entity.state.equals("unavailable", ignoreCase = true)
+            }
+        }
+
+        // Apply keyword search filter - supports multiple keywords
+        if (query.isNotEmpty()) {
+            // Split query by spaces to get individual keywords
+            val keywords = query.trim().split("""\s+""".toRegex()).filter { it.isNotEmpty() }
+
+            filtered = filtered.filter { entity ->
+                val searchableText = "${entity.name} ${entity.entityId} ${entity.room}".lowercase()
+                // All keywords must be present in the searchable text
+                keywords.all { keyword -> searchableText.contains(keyword) }
             }
         }
 

@@ -6,7 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.simplehomeassistant.databinding.FragmentDashboardBinding
 import com.google.android.material.snackbar.Snackbar
 
@@ -34,10 +36,23 @@ class DashboardFragment : Fragment() {
         setupListeners()
         observeViewModel()
 
-        // Auto-refresh on startup if configuration exists
+        // Load entities on view creation if configuration exists
+        if (viewModel.activeConfiguration.value != null) {
+            android.util.Log.d(
+                "DashboardFragment",
+                "Config exists on view created, loading entities..."
+            )
+            viewModel.loadEntities()
+        } else {
+            android.util.Log.d("DashboardFragment", "No active config on view created")
+        }
+
+        // Also observe for future configuration changes
         viewModel.activeConfiguration.observe(viewLifecycleOwner) { config ->
+            android.util.Log.d("DashboardFragment", "Config changed: ${config?.name}")
             if (config != null && viewModel.entities.value.isNullOrEmpty()) {
                 // Configuration exists and no entities loaded yet - auto refresh
+                android.util.Log.d("DashboardFragment", "Loading entities due to config change...")
                 viewModel.loadEntities()
             }
         }
@@ -52,6 +67,55 @@ class DashboardFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = this@DashboardFragment.adapter
         }
+
+        // Add swipe-to-delete support for custom tabs only
+        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            0,
+            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            override fun getSwipeDirs(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder
+            ): Int {
+                // Only allow swipe in custom tabs, not "All" tab
+                val currentTab = viewModel.currentTab.value
+                return if (currentTab != null && currentTab != "All") {
+                    super.getSwipeDirs(recyclerView, viewHolder)
+                } else {
+                    0 // Disable swipe
+                }
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.bindingAdapterPosition
+                val entity = adapter.getEntityAt(position)
+
+                if (entity != null) {
+                    val entityId = entity.entityId
+                    val entityName = entity.name
+                    val tabName = viewModel.currentTab.value
+
+                    viewModel.removeDeviceFromCurrentTab(entityId)
+
+                    Snackbar.make(
+                        binding.root,
+                        "$entityName removed from $tabName",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("UNDO") {
+                        // Re-add the entity to the tab
+                        viewModel.addDeviceToCurrentTab(entityId)
+                    }.show()
+                }
+            }
+        })
+
+        itemTouchHelper.attachToRecyclerView(binding.entitiesRecyclerView)
     }
 
     private fun setupListeners() {

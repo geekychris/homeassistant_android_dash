@@ -48,6 +48,17 @@
             android:queryHint="Search entities..." />
     </com.google.android.material.card.MaterialCardView>
 
+    <CheckBox
+        android:id="@+id/filterUnavailableCheckbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:text="Hide unavailable devices"
+        android:checked="false"
+        app:layout_constraintTop_toBottomOf="@id/searchCard"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/entitiesRecyclerView"
         android:layout_width="match_parent"
@@ -55,7 +66,7 @@
         android:layout_marginTop="8dp"
         android:padding="8dp"
         android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/searchCard"
+        app:layout_constraintTop_toBottomOf="@id/filterUnavailableCheckbox"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

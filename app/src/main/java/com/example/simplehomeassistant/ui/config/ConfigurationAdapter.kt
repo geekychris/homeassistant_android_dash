@@ -12,7 +12,9 @@ import com.google.android.material.chip.Chip
 
 class ConfigurationAdapter(
     private val onActivate: (Configuration) -> Unit,
-    private val onDelete: (Configuration) -> Unit
+    private val onDelete: (Configuration) -> Unit,
+    private val onEdit: (Configuration) -> Unit,
+    private val onUrlPreferenceChange: (Configuration, Boolean) -> Unit
 ) : RecyclerView.Adapter<ConfigurationAdapter.ConfigurationViewHolder>() {
 
     private var configurations = listOf<Configuration>()
@@ -42,7 +44,11 @@ class ConfigurationAdapter(
         private val externalUrlText: TextView = view.findViewById(R.id.configExternalUrl)
         private val activeChip: Chip = view.findViewById(R.id.activeChip)
         private val activateButton: MaterialButton = view.findViewById(R.id.activateButton)
+        private val editButton: MaterialButton = view.findViewById(R.id.editButton)
         private val deleteButton: MaterialButton = view.findViewById(R.id.deleteButton)
+        private val urlModeLabel: TextView = view.findViewById(R.id.urlModeLabel)
+        private val urlModeSwitch: com.google.android.material.switchmaterial.SwitchMaterial =
+            view.findViewById(R.id.urlModeSwitch)
 
         fun bind(configuration: Configuration, isActive: Boolean) {
             nameText.text = configuration.name
@@ -52,8 +58,28 @@ class ConfigurationAdapter(
             activeChip.visibility = if (isActive) View.VISIBLE else View.GONE
             activateButton.visibility = if (!isActive) View.VISIBLE else View.GONE
 
+            // Show URL mode switch only for active configuration
+            urlModeLabel.visibility = if (isActive) View.VISIBLE else View.GONE
+            urlModeSwitch.visibility = if (isActive) View.VISIBLE else View.GONE
+
+            // Set switch state based on configuration preference
+            urlModeSwitch.isChecked = configuration.preferInternalUrl
+            urlModeSwitch.text = if (configuration.preferInternalUrl) "Internal" else "External"
+
+            // Handle switch changes
+            urlModeSwitch.setOnCheckedChangeListener { _, isChecked ->
+                urlModeSwitch.text = if (isChecked) "Internal" else "External"
+                if (isChecked != configuration.preferInternalUrl) {
+                    onUrlPreferenceChange(configuration, isChecked)
+                }
+            }
+
             activateButton.setOnClickListener {
                 onActivate(configuration)
+            }
+
+            editButton.setOnClickListener {
+                onEdit(configuration)
             }
 
             deleteButton.setOnClickListener {
