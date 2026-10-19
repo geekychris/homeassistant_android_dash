@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Homeassistant Android Dash logo" width="180">
+</p>
+
 # Simple Home Assistant - Android App
 
 <div align="center">
